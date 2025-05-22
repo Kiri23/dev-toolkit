@@ -1,0 +1,21 @@
+# Sistema
+.DS_Store
+*.log
+*.tmp
+
+# Credenciales
+secrets.yml
+*.pem
+*.key
+
+# Backups
+*.backup
+*.bak
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Lua
+*.luac
