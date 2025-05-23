@@ -53,6 +53,26 @@ if #real_args == 0 then
     os.exit(0)
 end
 
+-- Registry de comandos
+local command_handlers = {
+    ["pr.create"] = function(options)
+        debug.info("Usando módulo gh para crear PR")
+        return gh.createPr(options)
+    end,
+    ["pr.list"] = function(options)
+        debug.info("Usando módulo gh para listar PRs")
+        return gh.listPrs(options)
+    end,
+    ["issue.create"] = function(options)
+        debug.info("Usando módulo gh para crear Issue")
+        return gh.createIssue(options)
+    end,
+    ["issue.list"] = function(options)
+        debug.info("Usando módulo gh para listar Issues")
+        return gh.listIssues(options)
+    end
+}
+
 -- Determinar tipo de comando
 local command_type = parsed.command[1]
 local subcommand = parsed.command[2]
@@ -62,131 +82,36 @@ debug.info("Subcomando detectado: " .. (subcommand or "ninguno"))
 
 local final_command
 
--- Usar el módulo gh para comandos específicos de GitHub
-if command_type == "pr" and subcommand == "create" then
-    debug.info("Usando módulo gh para crear PR")
-    
-    -- Convertir flags a opciones para el módulo gh
+-- Construir la clave del comando
+local command_key = command_type .. "." .. subcommand
+
+-- Verificar si existe un manejador específico para este comando
+if command_handlers[command_key] then
     local options = {}
     
-    -- Aplicar defaults de configuración
-    for key, value in pairs(config.pr_defaults) do
-        options[key] = value
-    end
-    
-    -- Sobrescribir con flags del usuario
-    if parsed.flags["--title"] then
-        options.title = parsed.flags["--title"]
-    end
-    if parsed.flags["--base"] then
-        options.base = parsed.flags["--base"]
-    end
-    if parsed.flags["--body"] then
-        options.body = parsed.flags["--body"]
-    end
-    if parsed.flags["--head"] then
-        options.head = parsed.flags["--head"]
-    end
-    if parsed.flags["--draft"] then
-        options.draft = true
-    end
-    if parsed.flags["--reviewer"] then
-        options.reviewer = parsed.flags["--reviewer"]
-    end
-    if parsed.flags["--assignee"] then
-        options.assignee = parsed.flags["--assignee"]
-    end
-    if parsed.flags["--label"] then
-        options.label = parsed.flags["--label"]
-    end
-    
-    debug.info("Opciones para createPr:", options)
-    final_command = gh.createPr(options)
-    
-elseif command_type == "pr" and subcommand == "list" then
-    debug.info("Usando módulo gh para listar PRs")
-    
-    local options = {}
-    if parsed.flags["--state"] then
-        options.state = parsed.flags["--state"]
-    end
-    if parsed.flags["--limit"] then
-        options.limit = tonumber(parsed.flags["--limit"])
-    end
-    if parsed.flags["--author"] then
-        options.author = parsed.flags["--author"]
-    end
-    if parsed.flags["--base"] then
-        options.base = parsed.flags["--base"]
-    end
-    if parsed.flags["--head"] then
-        options.head = parsed.flags["--head"]
-    end
-    if parsed.flags["--label"] then
-        options.label = parsed.flags["--label"]
-    end
-    
-    debug.info("Opciones para listPrs:", options)
-    final_command = gh.listPrs(options)
-    
-elseif command_type == "issue" and subcommand == "create" then
-    debug.info("Usando módulo gh para crear Issue")
-    
-    local options = {}
-    
-    -- Aplicar defaults de configuración si existen
-    if config.issue_defaults then
+    -- Aplicar defaults según el tipo de comando
+    if command_type == "pr" then
+        for key, value in pairs(config.pr_defaults) do
+            options[key] = value
+        end
+    elseif command_type == "issue" and config.issue_defaults then
         for key, value in pairs(config.issue_defaults) do
             options[key] = value
         end
     end
     
     -- Sobrescribir con flags del usuario
-    if parsed.flags["--title"] then
-        options.title = parsed.flags["--title"]
-    end
-    if parsed.flags["--body"] then
-        options.body = parsed.flags["--body"]
-    end
-    if parsed.flags["--assignee"] then
-        options.assignee = parsed.flags["--assignee"]
-    end
-    if parsed.flags["--label"] then
-        options.label = parsed.flags["--label"]
-    end
-    if parsed.flags["--milestone"] then
-        options.milestone = parsed.flags["--milestone"]
+    for flag, value in pairs(parsed.flags) do
+        if flag ~= "--debug" and flag ~= "-d" then
+            local key = string.match(flag, "^%-%-(.+)$")
+            if key then
+                options[key] = value
+            end
+        end
     end
     
-    debug.info("Opciones para createIssue:", options)
-    final_command = gh.createIssue(options)
-    
-elseif command_type == "issue" and subcommand == "list" then
-    debug.info("Usando módulo gh para listar Issues")
-    
-    local options = {}
-    if parsed.flags["--state"] then
-        options.state = parsed.flags["--state"]
-    end
-    if parsed.flags["--limit"] then
-        options.limit = tonumber(parsed.flags["--limit"])
-    end
-    if parsed.flags["--author"] then
-        options.author = parsed.flags["--author"]
-    end
-    if parsed.flags["--assignee"] then
-        options.assignee = parsed.flags["--assignee"]
-    end
-    if parsed.flags["--label"] then
-        options.label = parsed.flags["--label"]
-    end
-    if parsed.flags["--milestone"] then
-        options.milestone = parsed.flags["--milestone"]
-    end
-    
-    debug.info("Opciones para listIssues:", options)
-    final_command = gh.listIssues(options)
-    
+    debug.info("Opciones para " .. command_key .. ":", options)
+    final_command = command_handlers[command_key](options)
 else
     debug.info("Comando genérico, usando buildGenericCommand")
     final_command = gh.buildGenericCommand(real_args)

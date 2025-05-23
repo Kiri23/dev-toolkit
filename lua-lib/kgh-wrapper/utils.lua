@@ -135,17 +135,39 @@ function utils.build_command_with_defaults(base_command, user_flags, defaults)
     return final_cmd
 end
 
+-- Función para escapar argumentos de shell de forma segura
+function utils.escape_shell_arg(arg)
+    if type(arg) ~= "string" then
+        return tostring(arg)
+    end
+    
+    -- Si el argumento está vacío, devolver comillas vacías
+    if arg == "" then
+        return '""'
+    end
+    
+    -- Si el argumento no contiene caracteres especiales, devolverlo tal cual
+    if not string.match(arg, "[^%w%./-]") then
+        return arg
+    end
+    
+    -- Escapar comillas simples y backslashes
+    local escaped = string.gsub(arg, "['\\]", "\\%1")
+    
+    -- Escapar otros caracteres especiales
+    escaped = string.gsub(escaped, "[%z\1-\31]", function(c)
+        return string.format("\\x%02x", string.byte(c))
+    end)
+    
+    -- Envolver en comillas simples
+    return "'" .. escaped .. "'"
+end
 
--- Función para escapar argumentos que contienen espacios
+-- Función para escapar múltiples argumentos
 function utils.escape_args(args)
     local escaped = {}
     for _, arg in ipairs(args) do
-        -- Si el argumento contiene espacios, ponerlo entre comillas
-        if string.match(arg, "%s") then
-            table.insert(escaped, '"' .. arg .. '"')
-        else
-            table.insert(escaped, arg)
-        end
+        table.insert(escaped, utils.escape_shell_arg(arg))
     end
     return escaped
 end

@@ -28,7 +28,6 @@ sudo cp utils.lua /usr/local/share/kgh/
 sudo cp kgh_debug.lua /usr/local/share/kgh/
 sudo cp gh.lua /usr/local/share/kgh/
 sudo cp main.lua /usr/local/share/kgh/
-sudo cp github.lua /usr/local/share/kgh/
 
 # Crear ejecutable principal
 echo "🔧 Creando ejecutable..."
