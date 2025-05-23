@@ -2,6 +2,7 @@
 local config = require("config")
 local utils = require("utils")
 local debug = require("kgh_debug")
+local ConfigManager = require("config_manager")
 
 -- IMPORTANTE: Inyectar debug en utils DESPUÉS de cargar ambos módulos
 utils.set_debug(debug)
@@ -54,9 +55,85 @@ end
 local command_type = parsed.command[1]
 local subcommand = parsed.command[2]
 
-debug.info("Tipo de comando detectado: " .. (command_type or "ninguno"))
-debug.info("Subcomando detectado: " .. (subcommand or "ninguno"))
+debug.info("KGH Command processing: type='" .. (command_type or "nil") .. "', subcommand='" .. (subcommand or "nil") .. "'")
 
+-- Handle 'config' commands first
+if command_type == "config" then
+    debug.info("Handling 'config' command type.")
+    if subcommand == "get" then
+        local key = parsed.command[3]
+        if not key then
+            debug.error("No key provided for 'kgh config get'")
+            print("Error: No key provided for 'kgh config get'. Usage: kgh config get <key>")
+            os.exit(1)
+        end
+        debug.info("Calling ConfigManager.get_value for key: " .. key)
+        local value = ConfigManager.get_value(key)
+        if value ~= nil then
+            print(tostring(value))
+        else
+            -- Optionally, print a specific message or just exit silently if key not found
+            debug.info("Key '" .. key .. "' not found in configuration. No output printed.")
+        end
+        os.exit(0) -- Successfully handled 'config get', exit.
+    elseif subcommand == "set" then
+        local key = parsed.command[3]
+        local value_str = parsed.command[4] -- Value from command line is always a string initially
+        
+        if not key or value_str == nil then -- Check value_str for nil explicitly
+            debug.error("Key or value not provided for 'kgh config set'")
+            print("Error: Key or value not provided. Usage: kgh config set <key> <value>")
+            os.exit(1)
+        end
+
+        local processed_value
+        if value_str == "true" then
+            processed_value = true
+        elseif value_str == "false" then
+            processed_value = false
+        else
+            local num_value = tonumber(value_str)
+            if num_value ~= nil then
+                processed_value = num_value
+            else
+                processed_value = value_str -- Keep as string if not boolean or number
+            end
+        end
+        
+        debug.info("Calling ConfigManager.set_value for key: '" .. key .. "', processed_value: '" .. tostring(processed_value) .. "' (original string: '" .. value_str .. "')")
+        if ConfigManager.set_value(key, processed_value) then
+            print("Configuration updated for key: " .. key)
+            debug.success("Configuration updated for key: " .. key)
+        else
+            -- ConfigManager.set_value should print specific errors
+            print("Failed to update configuration for key: " .. key)
+            debug.error("Failed to update configuration (ConfigManager.set_value returned false) for key: " .. key)
+            os.exit(1) 
+        end
+        os.exit(0)
+    elseif subcommand == "list" then
+        debug.info("Calling ConfigManager.list_configs")
+        local config_lines = ConfigManager.list_configs()
+        if #config_lines > 0 then
+            for _, line in ipairs(config_lines) do
+                print(line)
+            end
+        else
+            debug.info("No configurations to display for 'list' command.")
+            -- Consider if a message like "No configurations set." should be printed to stdout
+            -- For now, it prints nothing if the list is empty, consistent with `git config -l` on an empty config
+        end
+        os.exit(0) -- Successfully handled 'config list', exit.
+    else
+        debug.error("Unknown 'kgh config' subcommand: " .. (subcommand or "none"))
+        -- Update the supported command list in the error message
+        print("Error: Unknown 'kgh config' subcommand: " .. (subcommand or "none") .. ". Supported: get, set, list.")
+        os.exit(1)
+    end
+end
+
+-- If not a 'config' command, proceed to existing logic for pr, issue, and generic commands
+debug.info("Command type is not 'config', proceeding to other command handlers.")
 local final_command
 local defaults = {}
 
