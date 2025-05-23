@@ -1,0 +1,51 @@
+name: KGH Wrapper Tests
+
+on:
+  push:
+    branches: [ main, cline-refactor-github-modular ]
+  pull_request:
+    branches: [ main, cline-refactor-github-modular ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Lua
+        run: |
+          apt-get update
+          apt-get install -y lua5.3
+
+      - name: Install GitHub CLI
+        run: |
+          type -p curl >/dev/null || (apt update && apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+          && apt update \
+          && apt install gh -y
+
+      - name: Install KGH Wrapper
+        run: |
+          cd lua-lib/kgh-wrapper
+          bash install_kgh.sh
+
+      - name: Configure GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configurar gh para usar el token
+          gh auth status || gh auth login --with-token <<< "$GITHUB_TOKEN"
+
+      - name: Run Tests
+        run: |
+          cd lua-lib/kgh-wrapper
+          # Ejecutar tests en modo dry-run
+          kgh pr create --title "Test PR" --body "Test body" --dry
+          kgh pr list --state open --limit 5 --dry
+          kgh issue create --title "Test Issue" --body "Test body" --dry
+          kgh issue list --state open --limit 5 --dry
+          kgh repo view --json name,description --dry
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
