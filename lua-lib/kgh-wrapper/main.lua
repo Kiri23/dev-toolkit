@@ -17,7 +17,7 @@ if arg then
     end
 end
 
--- Parsear argumentos (esto detectará el flag --debug)
+-- Parsear argumentos (esto detectará los flags --debug y --dry)
 local parsed = utils.parse_args(args)
 
 -- Habilitar debug si se detectó el flag
@@ -27,28 +27,35 @@ if parsed.has_debug then
     debug.config(config)
 end
 
--- Si no hay argumentos válidos (excluyendo --debug), mostrar ayuda
+-- Habilitar modo dry-run si se detectó el flag
+if parsed.has_dry then
+    config.dry_run = true
+    debug.success("🌵 Modo simulación activado")
+end
+
+-- Si no hay argumentos válidos (excluyendo --debug y --dry), mostrar ayuda
 local real_args = {}
 for _, arg_val in ipairs(args) do
-    if arg_val ~= "--debug" and arg_val ~= "-d" then
+    if arg_val ~= "--debug" and arg_val ~= "-d" and arg_val ~= "--dry" then
         table.insert(real_args, arg_val)
     end
 end
 
 if #real_args == 0 then
     print("🚀 KGH - GitHub CLI Personalizado")
-    print("Uso: kgh [comando] [argumentos] [--debug]")
+    print("Uso: kgh [comando] [argumentos] [--debug] [--dry]")
     print("")
     print("Ejemplos:")
     print("  kgh pr create --title 'Fix bug'")
     print("  kgh pr create --title 'Fix bug' --debug")
-    print("  kgh pr list --debug")
+    print("  kgh pr list --dry")
     print("")
     print("💡 Configuraciones automáticas:")
     print("  - PRs: --base " .. config.pr_defaults.base)
     print("")
     print("🐛 Debug:")
     print("  --debug, -d    Mostrar información de debug")
+    print("  --dry          Modo simulación (no ejecuta comandos)")
     print("")
     os.exit(0)
 end
@@ -102,7 +109,7 @@ if command_handlers[command_key] then
     
     -- Sobrescribir con flags del usuario
     for flag, value in pairs(parsed.flags) do
-        if flag ~= "--debug" and flag ~= "-d" then
+        if flag ~= "--debug" and flag ~= "-d" and flag ~= "--dry" then
             local key = string.match(flag, "^%-%-(.+)$")
             if key then
                 options[key] = value
@@ -122,18 +129,20 @@ if config.show_command then
     utils.show_debug_command(final_command)
 end
 
--- Ejecutar comando
-local result, success = utils.execute_command(final_command)
+-- Ejecutar comando solo si no estamos en modo dry-run
+if not config.dry_run then
+    local result, success = utils.execute_command(final_command)
 
--- Mostrar resultado
-if result and result ~= "" then
-    print(result)
-end
+    -- Mostrar resultado
+    if result and result ~= "" then
+        print(result)
+    end
 
--- Salir con código apropiado
-if not success then
-    debug.error("Comando falló")
-    os.exit(1)
-else
-    debug.success("Comando ejecutado exitosamente")
+    -- Salir con código apropiado
+    if not success then
+        debug.error("Comando falló")
+        os.exit(1)
+    else
+        debug.success("Comando ejecutado exitosamente")
+    end
 end

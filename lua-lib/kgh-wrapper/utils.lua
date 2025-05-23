@@ -45,7 +45,8 @@ function utils.parse_args(args)
     local parsed = {
         command = {},
         flags = {},
-        has_debug = false
+        has_debug = false,
+        has_dry = false  -- Nuevo flag para modo simulación
     }
     
     local i = 1
@@ -56,6 +57,10 @@ function utils.parse_args(args)
         if current_arg == "--debug" or current_arg == "-d" then
             parsed.has_debug = true
             safe_debug("success", "Debug habilitado via flag")
+            i = i + 1
+        elseif current_arg == "--dry" then
+            parsed.has_dry = true
+            safe_debug("success", "Modo simulación habilitado via flag")
             i = i + 1
         elseif string.match(current_arg, "^%-%-") then
             -- Es una flag larga (--title)
@@ -182,6 +187,13 @@ function utils.build_generic_command(args)
     
     safe_debug("success", "Comando genérico construido: " .. cmd)
     return cmd
+end
+
+-- Función para mostrar el comando en modo dry-run
+function utils.show_dry_run_command(cmd)
+    if cmd then
+        print("[DRY RUN] Would execute:", cmd)
+    end
 end
 
 return utils

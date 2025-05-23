@@ -3,192 +3,114 @@
 -- Sin efectos secundarios, solo retorna comandos/resultados
 
 local gh = {}
+local utils = require("utils")
+local config = require("config")
 
 -- Función para crear un Pull Request
 -- @param options tabla con opciones: {title, base, body, head, draft, etc.}
 -- @return string comando gh para ejecutar
 function gh.createPr(options)
-    options = options or {}
+    local cmd = "gh pr create"
     
-    local cmd_parts = {"gh", "pr", "create"}
-    
-    -- Agregar opciones obligatorias y opcionales
     if options.title then
-        table.insert(cmd_parts, "--title")
-        table.insert(cmd_parts, '"' .. options.title .. '"')
+        cmd = cmd .. " --title " .. utils.escape_shell_arg(options.title)
     end
-    
-    if options.base then
-        table.insert(cmd_parts, "--base")
-        table.insert(cmd_parts, options.base)
-    end
-    
     if options.body then
-        table.insert(cmd_parts, "--body")
-        table.insert(cmd_parts, '"' .. options.body .. '"')
+        cmd = cmd .. " --body " .. utils.escape_shell_arg(options.body)
     end
-    
+    if options.base then
+        cmd = cmd .. " --base " .. utils.escape_shell_arg(options.base)
+    end
     if options.head then
-        table.insert(cmd_parts, "--head")
-        table.insert(cmd_parts, options.head)
+        cmd = cmd .. " --head " .. utils.escape_shell_arg(options.head)
     end
-    
-    if options.draft then
-        table.insert(cmd_parts, "--draft")
+
+    if config.dry_run then
+        utils.show_dry_run_command(cmd)
+        return cmd
     end
-    
-    if options.reviewer then
-        table.insert(cmd_parts, "--reviewer")
-        table.insert(cmd_parts, options.reviewer)
-    end
-    
-    if options.assignee then
-        table.insert(cmd_parts, "--assignee")
-        table.insert(cmd_parts, options.assignee)
-    end
-    
-    if options.label then
-        table.insert(cmd_parts, "--label")
-        table.insert(cmd_parts, options.label)
-    end
-    
-    return table.concat(cmd_parts, " ")
+
+    return cmd
 end
 
 -- Función para listar Pull Requests
 -- @param options tabla con opciones: {state, limit, author, base, etc.}
 -- @return string comando gh para ejecutar
 function gh.listPrs(options)
-    options = options or {}
-    
-    local cmd_parts = {"gh", "pr", "list"}
+    local cmd = "gh pr list"
     
     if options.state then
-        table.insert(cmd_parts, "--state")
-        table.insert(cmd_parts, options.state)
+        cmd = cmd .. " --state " .. utils.escape_shell_arg(options.state)
     end
-    
     if options.limit then
-        table.insert(cmd_parts, "--limit")
-        table.insert(cmd_parts, tostring(options.limit))
+        cmd = cmd .. " --limit " .. utils.escape_shell_arg(options.limit)
     end
-    
-    if options.author then
-        table.insert(cmd_parts, "--author")
-        table.insert(cmd_parts, options.author)
+
+    if config.dry_run then
+        utils.show_dry_run_command(cmd)
+        return cmd
     end
-    
-    if options.base then
-        table.insert(cmd_parts, "--base")
-        table.insert(cmd_parts, options.base)
-    end
-    
-    if options.head then
-        table.insert(cmd_parts, "--head")
-        table.insert(cmd_parts, options.head)
-    end
-    
-    if options.label then
-        table.insert(cmd_parts, "--label")
-        table.insert(cmd_parts, options.label)
-    end
-    
-    return table.concat(cmd_parts, " ")
+
+    return cmd
 end
 
 -- Función para crear un Issue
 -- @param options tabla con opciones: {title, body, assignee, label, etc.}
 -- @return string comando gh para ejecutar
 function gh.createIssue(options)
-    options = options or {}
-    
-    local cmd_parts = {"gh", "issue", "create"}
+    local cmd = "gh issue create"
     
     if options.title then
-        table.insert(cmd_parts, "--title")
-        table.insert(cmd_parts, '"' .. options.title .. '"')
+        cmd = cmd .. " --title " .. utils.escape_shell_arg(options.title)
     end
-    
     if options.body then
-        table.insert(cmd_parts, "--body")
-        table.insert(cmd_parts, '"' .. options.body .. '"')
+        cmd = cmd .. " --body " .. utils.escape_shell_arg(options.body)
     end
-    
-    if options.assignee then
-        table.insert(cmd_parts, "--assignee")
-        table.insert(cmd_parts, options.assignee)
-    end
-    
     if options.label then
-        table.insert(cmd_parts, "--label")
-        table.insert(cmd_parts, options.label)
+        cmd = cmd .. " --label " .. utils.escape_shell_arg(options.label)
     end
-    
-    if options.milestone then
-        table.insert(cmd_parts, "--milestone")
-        table.insert(cmd_parts, options.milestone)
+
+    if config.dry_run then
+        utils.show_dry_run_command(cmd)
+        return cmd
     end
-    
-    return table.concat(cmd_parts, " ")
+
+    return cmd
 end
 
 -- Función para listar Issues
 -- @param options tabla con opciones: {state, limit, author, assignee, etc.}
 -- @return string comando gh para ejecutar
 function gh.listIssues(options)
-    options = options or {}
-    
-    local cmd_parts = {"gh", "issue", "list"}
+    local cmd = "gh issue list"
     
     if options.state then
-        table.insert(cmd_parts, "--state")
-        table.insert(cmd_parts, options.state)
+        cmd = cmd .. " --state " .. utils.escape_shell_arg(options.state)
     end
-    
     if options.limit then
-        table.insert(cmd_parts, "--limit")
-        table.insert(cmd_parts, tostring(options.limit))
+        cmd = cmd .. " --limit " .. utils.escape_shell_arg(options.limit)
     end
-    
-    if options.author then
-        table.insert(cmd_parts, "--author")
-        table.insert(cmd_parts, options.author)
+
+    if config.dry_run then
+        utils.show_dry_run_command(cmd)
+        return cmd
     end
-    
-    if options.assignee then
-        table.insert(cmd_parts, "--assignee")
-        table.insert(cmd_parts, options.assignee)
-    end
-    
-    if options.label then
-        table.insert(cmd_parts, "--label")
-        table.insert(cmd_parts, options.label)
-    end
-    
-    if options.milestone then
-        table.insert(cmd_parts, "--milestone")
-        table.insert(cmd_parts, options.milestone)
-    end
-    
-    return table.concat(cmd_parts, " ")
+
+    return cmd
 end
 
 -- Función para construir comando genérico de GitHub
 -- @param args tabla con argumentos del comando
 -- @return string comando gh para ejecutar
 function gh.buildGenericCommand(args)
-    local cmd_parts = {"gh"}
-    
-    for _, arg in ipairs(args) do
-        -- Escapar argumentos que contienen espacios
-        if string.match(arg, "%s") then
-            table.insert(cmd_parts, '"' .. arg .. '"')
-        else
-            table.insert(cmd_parts, arg)
-        end
+    local cmd = "gh " .. table.concat(args, " ")
+
+    if config.dry_run then
+        utils.show_dry_run_command(cmd)
+        return cmd
     end
-    
-    return table.concat(cmd_parts, " ")
+
+    return cmd
 end
 
 return gh
