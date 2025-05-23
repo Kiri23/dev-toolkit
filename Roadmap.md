@@ -29,7 +29,26 @@ kgit sync                          # pull + cleanup branches
 kgit quick-commit "Quick fix"      # add . + commit + push
 ```
 
-### 3. 📋 Templates System
+### 3. 🤖 AI-Powered PR Review (PREMIUM FEATURE)
+
+**Objetivo**: OpenAI review de cambios antes de crear PR
+```bash
+kgh pr create --ai-review --title "Add user authentication"
+
+# Workflow:
+# 1. Analiza git diff
+# 2. Envía a OpenAI para resumir cambios
+# 3. Muestra summary inteligente
+# 4. Pregunta si crear PR con esa descripción
+```
+
+**Implementación**:
+- Integración con OpenAI API
+- Análisis inteligente de diffs
+- Templates de prompts para diferentes tipos de cambios
+- Confirmación interactiva antes de crear PR
+
+### 4. 📋 Templates System
 
 **PR Templates**:
 ```bash
@@ -42,7 +61,7 @@ kgh pr create --template feature --title "Add dark mode"
 kgh issue create --template bug --title "Button not working"
 ```
 
-### 4. 🤖 Automation Scripts
+### 5. 🤖 Automation Scripts
 
 **Python Tools**:
 - Email automation
@@ -62,20 +81,21 @@ kgh --debug-only config pr create # Solo debug de config
 kgh pr create --log-file debug.log # Output a archivo
 ```
 
-## 📅 Timeline
+## 🏆 Prioridades de Implementación
 
-### Phase 1 (Próximas 2 semanas)
+### Phase 1 (Core Features)
 - [x] Estructura base de dev-toolkit
 - [x] KGH funcionando desde nueva ubicación
 - [ ] Config manager para KGH
+- [ ] AI-Powered PR Review
 - [ ] Templates básicos (bug, feature)
 
-### Phase 2 (Próximo mes)
+### Phase 2 (Expansion)
 - [ ] Git wrapper (kgit) básico
 - [ ] Python tools estructura
 - [ ] Ansible playbook para macOS setup
 
-### Phase 3 (Futuro)
+### Phase 3 (Advanced)
 - [ ] Analytics y estadísticas
 - [ ] Multi-repo support
 - [ ] Integración con otras herramientas
