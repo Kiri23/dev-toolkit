@@ -103,7 +103,11 @@ end
 -- Create default configuration file
 function config.create_default_config()
     local config_dir = os.getenv("HOME") .. "/.config/kgh"
-    os.execute("mkdir -p " .. config_dir)
+    local success, err_msg, err_code = os.execute("mkdir -p " .. config_dir)
+    if not success then
+        print("Warning: Could not create config directory: " .. (err_msg or err_code or "unknown error"))
+        return false
+    end
     
     local config_content = [[-- KGH Configuration File
 -- Este archivo permite personalizar el comportamiento de kgh

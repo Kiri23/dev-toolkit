@@ -131,11 +131,9 @@ create_executable() {
 # Set Lua path to include KGH modules
 export LUA_PATH="/usr/local/lib/kgh/?.lua;$LUA_PATH"
 
-# Change to the KGH library directory
-cd /usr/local/lib/kgh
-
-# Execute the main.lua with all arguments
-exec lua main.lua "$@"
+# Execute the main.lua with all arguments from the KGH library directory
+# but preserve the user's current working directory
+exec lua /usr/local/lib/kgh/main.lua "$@"
 EOF
     
     chmod +x "$KGH_BIN_PATH"
@@ -231,7 +229,17 @@ if kgh_installed then
         end
     end
     
-    local cmd = "kgh " .. table.concat(args, " ")
+    -- Escape arguments properly for shell safety
+    local escaped_args = {}
+    for _, arg_val in ipairs(args) do
+        if arg_val:match("[^%w%./%-%_]") then
+            table.insert(escaped_args, "'" .. arg_val:gsub("'", "'\\''") .. "'")
+        else
+            table.insert(escaped_args, arg_val)
+        end
+    end
+    
+    local cmd = "kgh " .. table.concat(escaped_args, " ")
     os.exit(os.execute(cmd))
 else
     print("❌ Sistema modular no instalado. Ejecuta: sudo ./lua-lib/kgh-wrapper/install_kgh.sh")

@@ -38,7 +38,13 @@ function debug.enable()
     
     -- Optionally create log file
     local log_dir = os.getenv("HOME") .. "/.config/kgh/logs"
-    os.execute("mkdir -p " .. log_dir)
+    local success, err_msg, err_code = os.execute("mkdir -p " .. log_dir)
+
+    if not success then
+        print("Warning: Could not create log directory: " .. (err_msg or err_code or "unknown error"))
+        return -- Don't attempt to create log file if directory creation failed
+    end
+
     local log_filename = log_dir .. "/kgh_debug_" .. os.date("%Y%m%d_%H%M%S") .. ".log"
     debug.log_file = io.open(log_filename, "w")
     

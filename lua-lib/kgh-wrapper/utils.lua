@@ -67,7 +67,17 @@ function utils.parse_args(args)
             local flag_name = arg:sub(3)
             if i + 1 <= #args and not args[i + 1]:sub(1, 1) == "-" then
                 -- Flag with value
-                parsed.flags[flag_name] = args[i + 1]
+                local value = args[i + 1]
+                if parsed.flags[flag_name] then
+                    -- Convert to table if multiple values
+                    if type(parsed.flags[flag_name]) == "string" then
+                        parsed.flags[flag_name] = {parsed.flags[flag_name], value}
+                    else
+                        table.insert(parsed.flags[flag_name], value)
+                    end
+                else
+                    parsed.flags[flag_name] = value
+                end
                 i = i + 1
             else
                 -- Boolean flag
@@ -78,7 +88,17 @@ function utils.parse_args(args)
             local flag_name = arg:sub(2)
             if i + 1 <= #args and not args[i + 1]:sub(1, 1) == "-" then
                 -- Flag with value
-                parsed.flags[flag_name] = args[i + 1]
+                local value = args[i + 1]
+                if parsed.flags[flag_name] then
+                    -- Convert to table if multiple values
+                    if type(parsed.flags[flag_name]) == "string" then
+                        parsed.flags[flag_name] = {parsed.flags[flag_name], value}
+                    else
+                        table.insert(parsed.flags[flag_name], value)
+                    end
+                else
+                    parsed.flags[flag_name] = value
+                end
                 i = i + 1
             else
                 -- Boolean flag
