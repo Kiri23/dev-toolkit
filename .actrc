@@ -1,0 +1,4 @@
+--bind
+--env-file .env
+--secret GITHUB_TOKEN=${GITHUB_TOKEN}
+--container-architecture linux/amd64 
