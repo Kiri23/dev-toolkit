@@ -38,6 +38,11 @@ jobs:
           # Configurar gh para usar el token
           gh auth status || gh auth login --with-token <<< "$GITHUB_TOKEN"
 
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+
       - name: Run Tests
         run: |
           cd lua-lib/kgh-wrapper
@@ -47,5 +52,8 @@ jobs:
           kgh issue create --title "Test Issue" --body "Test body" --dry
           kgh issue list --state open --limit 5 --dry
           kgh repo view --json name,description --dry
+          
+          # Test git module
+          lua tests/test_git.lua
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
