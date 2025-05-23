@@ -34,10 +34,8 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-           # Pass the comment text as the prompt
           prompt: "${{ github.event.comment.body }}"
           allowed_tools: [
-            # Git inspection commands (read-only)
             "Bash(git status)",
             "Bash(git log)",
             "Bash(git show)",
@@ -48,8 +46,6 @@ jobs:
             "Bash(git branch)",
             "Bash(git tag)",
             "Bash(git diff)",
-
-            # File exploration tools
             "View",        # Read file contents
             "GlobTool",    # Find files by pattern
             "GrepTool",    # Search file contents
