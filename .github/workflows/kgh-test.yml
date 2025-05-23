@@ -1,0 +1,46 @@
+name: KGH Wrapper Tests
+
+on:
+  push:
+    branches: [ main, cline-refactor-github-modular ]
+  pull_request:
+    branches: [ main, cline-refactor-github-modular ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Lua
+        uses: leafo/gh-actions-lua@v9.0.0
+        with:
+          luaVersion: '5.4'
+
+      - name: Install GitHub CLI
+        run: |
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+          && sudo apt update \
+          && sudo apt install gh -y
+
+      - name: Install KGH Wrapper
+        run: |
+          cd lua-lib/kgh-wrapper
+          sudo bash install_kgh.sh
+
+      - name: Configure GitHub CLI
+        run: |
+          # Create a test token with minimal permissions
+          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+          # Configure gh to use the token
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Run Tests
+        run: |
+          cd lua-lib/kgh-wrapper
+          bash test.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
