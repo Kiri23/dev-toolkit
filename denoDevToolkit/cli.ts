@@ -1,20 +1,26 @@
 #!/usr/bin/env -S deno run --allow-run --allow-read
 // cli.ts - Dynamic dispatcher for dok CLI
 import { assertDocker } from "./core/docker.ts";
+import { copyToClipboard } from "./core/clipboard.ts";
+import { OutputCapture } from "./core/output.ts";
 
 const HELP_TEXT = `
 dok - Docker CLI toolkit
 
 Usage:
-  dok <command> [args...]
+  dok <command> [args...] [flags]
   dok --help
   dok help <command>
 
+Flags:
+  --copy              Copy command output to clipboard
+
 Examples:
   dok ps              List running containers
+  dok ps --copy       List containers and copy to clipboard
   dok swarm           List Swarm containers
   dok local           List standalone containers
-  dok all             List all containers (grouped)
+  dok all --copy      List all containers and copy output
   dok svc <service>   Inspect a Swarm service
 
 Run 'dok help <command>' for more information on a specific command.
@@ -62,6 +68,29 @@ async function showCommandHelp(alias: string): Promise<number> {
   return 0;
 }
 
+/**
+ * Parse global flags from arguments
+ * @returns Object with flags set and cleaned arguments
+ */
+function parseGlobalFlags(args: string[]): {
+  flags: Set<string>;
+  cleanArgs: string[];
+} {
+  const flags = new Set<string>();
+  const cleanArgs: string[] = [];
+
+  for (const arg of args) {
+    if (arg.startsWith("--")) {
+      const flag = arg.slice(2); // Remove '--'
+      flags.add(flag);
+    } else {
+      cleanArgs.push(arg);
+    }
+  }
+
+  return { flags, cleanArgs };
+}
+
 async function main() {
   const args = Deno.args;
 
@@ -70,17 +99,27 @@ async function main() {
     Deno.exit(0);
   }
 
-  if (args[0] === "help") {
-    if (args.length < 2) {
+  // Parse global flags
+  const { flags, cleanArgs } = parseGlobalFlags(args);
+
+  // Handle help command
+  if (cleanArgs[0] === "help") {
+    if (cleanArgs.length < 2) {
       console.log(HELP_TEXT);
       Deno.exit(0);
     }
-    const code = await showCommandHelp(args[1]);
+    const code = await showCommandHelp(cleanArgs[1]);
     Deno.exit(code);
   }
 
-  const alias = args[0];
-  const commandArgs = args.slice(1);
+  if (cleanArgs.length === 0) {
+    console.error("Error: command required");
+    console.error("Run 'dok --help' for available commands.");
+    Deno.exit(1);
+  }
+
+  const alias = cleanArgs[0];
+  const commandArgs = cleanArgs.slice(1);
 
   const module = await resolveCommand(alias);
 
@@ -96,7 +135,28 @@ async function main() {
     await assertDocker();
   }
 
-  const code = await module.run(commandArgs);
+  // Execute command with output capture if --copy is enabled
+  let code: number;
+  if (flags.has("copy")) {
+    const capture = new OutputCapture();
+    capture.start();
+
+    code = await module.run(commandArgs);
+
+    const output = capture.stop();
+
+    if (code === 0 && output.trim()) {
+      const success = await copyToClipboard(output);
+      if (success) {
+        console.log("\n✓ Output copied to clipboard");
+      } else {
+        console.error("\n✗ Failed to copy to clipboard");
+      }
+    }
+  } else {
+    code = await module.run(commandArgs);
+  }
+
   Deno.exit(code);
 }
 

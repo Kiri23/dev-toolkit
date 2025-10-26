@@ -57,6 +57,32 @@ dok --help
 dok help <command>
 ```
 
+### Global Flags
+
+All commands support these flags:
+
+- `--copy`: Copy command output to clipboard
+
+**Platform support:**
+- macOS: Uses `pbcopy`
+- Linux: Uses `xclip` (install with `apt-get install xclip`)
+- Windows: Uses `clip`
+
+**Examples:**
+```bash
+# Copy container list to clipboard
+dok ps --copy
+
+# Copy service inspection to clipboard
+dok svc myservice --copy
+
+# Copy all containers output
+dok all --copy
+
+# Flag can be placed anywhere
+dok --copy ps
+```
+
 ## Commands
 
 ### `dok ps`

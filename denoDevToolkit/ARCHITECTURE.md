@@ -337,12 +337,113 @@ This convention allows the CLI dispatcher to work without hardcoded knowledge of
 3. Set `requiresDocker = false`
 4. Everything just works!
 
+## 🔌 Global Flags System
+
+The CLI supports **extensible global flags** (like `--copy`, `--json`, etc.) that work across all commands without modifying individual command implementations.
+
+### Architecture
+
+```
+User runs: dok ps --copy
+      │
+      ▼
+┌─────────────────────────────────┐
+│ cli.ts                          │
+│ 1. parseGlobalFlags(args)       │
+│    → flags: Set(['copy'])       │
+│    → cleanArgs: ['ps']          │
+│ 2. Resolve command 'ps'         │
+│ 3. Start OutputCapture          │
+│ 4. Execute ps.run()             │
+│ 5. Stop OutputCapture           │
+│ 6. copyToClipboard(output)      │
+└─────────────────────────────────┘
+```
+
+### Design Pattern
+
+**Key Components:**
+
+1. **`parseGlobalFlags(args)`** - Extracts flags from arguments
+   - Returns `{ flags: Set<string>, cleanArgs: string[] }`
+   - Flags are removed from args before passing to commands
+
+2. **`OutputCapture` class** (`core/output.ts`)
+   - Intercepts `console.log` and `console.error`
+   - Stores output while still displaying it
+   - Non-invasive: users see normal output
+
+3. **`copyToClipboard(text)`** (`core/clipboard.ts`)
+   - Cross-platform clipboard support
+   - Detects OS automatically (macOS/Linux/Windows)
+   - Uses appropriate command: `pbcopy`, `xclip`, `clip`
+
+### Benefits
+
+✅ **Zero Touch on Commands** - No changes needed to existing commands
+✅ **Works with Composition** - `dok all --copy` copies combined output
+✅ **Extensible** - Easy to add new flags (`--json`, `--quiet`, etc.)
+✅ **Cross-platform** - Automatic OS detection
+✅ **Non-invasive** - Output displays normally and gets captured
+
+### Adding New Global Flags
+
+To add a new flag (e.g., `--json`):
+
+1. **Parse the flag** in `cli.ts`:
+```typescript
+// Already handled by parseGlobalFlags()
+```
+
+2. **Add processor** in `main()` after command execution:
+```typescript
+if (flags.has("json")) {
+  const output = capture.getOutput();
+  const jsonData = convertToJSON(output); // Implement this
+  console.log(JSON.stringify(jsonData, null, 2));
+}
+```
+
+3. **Update `HELP_TEXT`** in `cli.ts`
+4. **Document** in `README.md`
+
+### Future Flags Examples
+
+**`--json` flag:**
+```typescript
+if (flags.has('json')) {
+  // Convert table output to JSON structure
+  const jsonOutput = parseTableToJSON(capture.getOutput());
+  console.log(JSON.stringify(jsonOutput, null, 2));
+}
+```
+
+**`--quiet` flag:**
+```typescript
+if (flags.has('quiet')) {
+  // Suppress normal output, show only errors
+  console.log = () => {};
+}
+```
+
+**`--output file.txt` flag:**
+```typescript
+if (flags.has('output')) {
+  const filename = getOutputFile(args);
+  await Deno.writeTextFile(filename, capture.getOutput());
+  console.log(`Output saved to ${filename}`);
+}
+```
+
+All without modifying individual commands!
+
 ## 🎓 Summary
 
 The architecture of `dok` is built on **separation of concerns**:
 
 - **`core/`** = "How to do things" (infrastructure)
 - **`commands/`** = "What to do and why" (business logic)
+- **Global flags** = "How to process output" (post-processing)
 
 This makes the codebase:
 - ✅ Easy to understand
