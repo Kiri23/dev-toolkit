@@ -1,0 +1,8 @@
+{
+  "tasks": {
+    "run": "deno run --allow-run --allow-read cli.ts",
+    "dev": "deno run --allow-run --allow-read cli.ts --help",
+    "compile": "deno compile --allow-run --include commands --include core -o dok cli.ts"
+  }
+}
+
