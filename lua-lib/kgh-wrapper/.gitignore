@@ -1,0 +1,12 @@
+# Archivos temporales
+*.tmp
+*.log
+.DS_Store
+
+# Backups
+*.backup
+*.bak
+
+# Archivos de configuración local sensibles
+local_config.lua
+secrets.lua
