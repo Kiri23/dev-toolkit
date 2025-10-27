@@ -23,7 +23,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$SCRIPT_DIR"
 
 echo -e "${YELLOW}Compiling dok...${NC}"
-deno compile --allow-run -o dok cli.ts
+deno task compile
 
 if [ ! -f "./dok" ]; then
     echo -e "${RED}Error: Compilation failed${NC}"
