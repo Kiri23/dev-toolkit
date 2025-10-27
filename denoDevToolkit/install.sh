@@ -10,7 +10,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # GitHub repository info
-GITHUB_RAW_URL="https://raw.githubusercontent.com/Kiri23/dev-toolkit/main/denoDevToolkit/dok"
+GITHUB_BASE_URL="https://raw.githubusercontent.com/Kiri23/dev-toolkit/main/denoDevToolkit"
 
 echo "🔧 dok CLI Installer"
 echo ""
@@ -36,6 +36,46 @@ else
     echo -e "${YELLOW}⚠ Deno not found${NC}"
     echo -e "${BLUE}Downloading precompiled binary from GitHub...${NC}"
     
+    # Detect OS and architecture
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    ARCH=$(uname -m)
+    
+    # Normalize architecture names
+    case "$ARCH" in
+        x86_64|amd64)
+            ARCH="x64"
+            ;;
+        aarch64|arm64)
+            ARCH="arm64"
+            ;;
+        *)
+            echo -e "${RED}Error: Unsupported architecture: $ARCH${NC}"
+            echo "Supported architectures: x86_64, amd64, aarch64, arm64"
+            exit 1
+            ;;
+    esac
+    
+    # Normalize OS names
+    case "$OS" in
+        linux)
+            OS="linux"
+            ;;
+        darwin)
+            OS="darwin"
+            ;;
+        *)
+            echo -e "${RED}Error: Unsupported OS: $OS${NC}"
+            echo "Supported OS: Linux, macOS (Darwin)"
+            exit 1
+            ;;
+    esac
+    
+    BINARY_NAME="dok-${OS}-${ARCH}"
+    GITHUB_RAW_URL="${GITHUB_BASE_URL}/${BINARY_NAME}"
+    
+    echo -e "${BLUE}Detected: ${OS} ${ARCH}${NC}"
+    echo -e "${BLUE}Downloading: ${BINARY_NAME}${NC}"
+    
     # Create temporary file
     TEMP_DOK="/tmp/dok_download"
     
@@ -47,6 +87,9 @@ else
     else
         echo -e "${RED}Error: Failed to download binary from GitHub${NC}"
         echo "URL: $GITHUB_RAW_URL"
+        echo ""
+        echo "Please ensure the precompiled binary exists in the repository:"
+        echo "  ${BINARY_NAME}"
         exit 1
     fi
 fi
