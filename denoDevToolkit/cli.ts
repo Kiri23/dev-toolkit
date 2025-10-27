@@ -15,6 +15,14 @@ Usage:
 Flags:
   --copy              Copy command output to clipboard
 
+Commands:
+  ps                  List running containers
+  swarm               List Swarm containers
+  local               List standalone containers
+  all                 List all containers (swarm + standalone)
+  svc <service>       Inspect a Swarm service
+  update              Update dok to the latest version
+
 Examples:
   dok ps              List running containers
   dok ps --copy       List containers and copy to clipboard
@@ -22,6 +30,7 @@ Examples:
   dok local           List standalone containers
   dok all --copy      List all containers and copy output
   dok svc <service>   Inspect a Swarm service
+  dok update          Update to the latest version
 
 Run 'dok help <command>' for more information on a specific command.
 `;
