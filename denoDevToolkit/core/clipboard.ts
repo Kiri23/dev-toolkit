@@ -58,7 +58,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
 /**
  * Copies text using OSC 52 escape sequences (works over SSH/headless)
- * 
+ *
  * OSC 52 is an ANSI escape sequence that allows terminal programs to set
  * the clipboard on the local machine, even when connected via SSH.
  * The terminal emulator intercepts the sequence and updates the local clipboard.
@@ -66,8 +66,17 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  */
 function copyUsingOSC52(text: string): boolean {
   try {
-    // Encode text to base64
-    const base64 = btoa(text);
+    // Encode text to UTF-8 bytes first, then to base64
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+
+    // Convert Uint8Array to base64 (handling UTF-8 correctly)
+    let binary = "";
+    for (let i = 0; i < data.length; i++) {
+      binary += String.fromCharCode(data[i]);
+    }
+    const base64 = btoa(binary);
+
     // OSC 52 escape sequence: \x1b]52;c;<base64>\x07
     const osc52 = `\x1b]52;c;${base64}\x07`;
 
@@ -75,7 +84,10 @@ function copyUsingOSC52(text: string): boolean {
     Deno.stdout.writeSync(new TextEncoder().encode(osc52));
     return true;
   } catch (_error) {
-    console.error("Failed to copy using OSC 52. Error: ", _error instanceof Error ? _error.message : _error);
+    console.error(
+      "Failed to copy using OSC 52. Error: ",
+      _error instanceof Error ? _error.message : _error,
+    );
     return false;
   }
 }
