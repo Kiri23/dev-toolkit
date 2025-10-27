@@ -75,7 +75,7 @@ function copyUsingOSC52(text: string): boolean {
     Deno.stdout.writeSync(new TextEncoder().encode(osc52));
     return true;
   } catch (_error) {
-    console.error("Failed to copy using OSC 52", _error);
+    console.error("Failed to copy using OSC 52. Error: ", _error instanceof Error ? _error.message : _error);
     return false;
   }
 }
