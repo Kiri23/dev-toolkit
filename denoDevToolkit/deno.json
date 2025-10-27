@@ -3,9 +3,9 @@
     "run": "deno run --allow-run --allow-read cli.ts",
     "dev": "deno run --allow-run --allow-read cli.ts --help",
     "compile": "deno compile --allow-run --include commands --include core -o dok cli.ts",
-    "compile-linux": "deno compile --allow-run --include commands --include core --target x86_64-unknown-linux-gnu -o dok-linux-x64 cli.ts",
-    "compile-linux-arm": "deno compile --allow-run --include commands --include core --target aarch64-unknown-linux-gnu -o dok-linux-arm64 cli.ts",
-    "compile-all": "deno task compile && deno task compile-linux && deno task compile-linux-arm"
+    "compile:linux": "deno compile --allow-run --include commands --include core --target x86_64-unknown-linux-gnu -o dok-linux-x64 cli.ts",
+    "compile:linux-arm": "deno compile --allow-run --include commands --include core --target aarch64-unknown-linux-gnu -o dok-linux-arm64 cli.ts",
+    "compile:all": "deno task compile && deno task compile:linux && deno task compile:linux-arm"
   }
 }
 
