@@ -1,0 +1,77 @@
+---
+- name: Install kgh CLI tool and setup user configuration
+  hosts: localhost
+  connection: local
+  vars:
+    # Assumes this playbook ('install_kgh.yml') is in an 'ansible' directory
+    # at the root of the dev-toolkit repository.
+    kgh_repo_base_path: "{{ playbook_dir }}/.." 
+    kgh_script_relative_path: "lua-lib/github.lua"
+    kgh_symlink_dest: "/usr/local/bin/kgh"
+    
+    # User-specific configuration (ansible_env.HOME resolves to the user's home dir)
+    user_kgh_config_dir: "{{ ansible_env.HOME }}/.config/kgh"
+    user_kgh_config_file: "{{ user_kgh_config_dir }}/user_config.lua"
+
+  tasks:
+    - name: Determine absolute path for kgh script
+      ansible.builtin.command: "realpath {{ kgh_repo_base_path }}/{{ kgh_script_relative_path }}"
+      register: realpath_kgh_script
+      changed_when: false # This command does not change state
+      check_mode: no # Always run this, even in check mode, to get the path
+
+    - name: Set kgh_script_abs_path fact
+      ansible.builtin.set_fact:
+        kgh_script_abs_path: "{{ realpath_kgh_script.stdout }}"
+
+    - name: Ensure kgh source script exists
+      ansible.builtin.stat:
+        path: "{{ kgh_script_abs_path }}"
+      register: kgh_script_file_stat
+      
+    - name: Fail if kgh source script not found
+      ansible.builtin.fail:
+        msg: "kgh source script not found at {{ kgh_script_abs_path }}. Check paths."
+      when: not kgh_script_file_stat.stat.exists
+
+    - name: Ensure the kgh Lua script is executable
+      ansible.builtin.file:
+        path: "{{ kgh_script_abs_path }}"
+        mode: "0755" # rwxr-xr-x
+      
+    - name: Create symbolic link for kgh command using sudo
+      ansible.builtin.file:
+        src: "{{ kgh_script_abs_path }}" # Must be absolute path for symlink with sudo
+        dest: "{{ kgh_symlink_dest }}"
+        state: link
+        force: yes # Equivalent to ln -sf
+      become: yes # Requires sudo privileges
+      notify: Display kgh symlink info
+
+    - name: Ensure user kgh configuration directory exists
+      ansible.builtin.file:
+        path: "{{ user_kgh_config_dir }}"
+        state: directory
+        mode: "0755" 
+      # Runs as the user executing the playbook (no 'become')
+
+    - name: Ensure default user kgh configuration file exists
+      ansible.builtin.copy:
+        content: |
+          -- kgh user configuration file
+          -- This file stores user-specific settings for kgh.
+          return {}
+        dest: "{{ user_kgh_config_file }}"
+        force: no # Do not overwrite if it already exists
+        mode: "0644" # rw-r--r--
+      register: user_config_file_action
+      # Runs as the user executing the playbook (no 'become')
+
+    - name: Report status of user configuration file
+      ansible.builtin.debug:
+        msg: "User kgh config file at {{ user_kgh_config_file }} was {{ 'created' if user_config_file_action.changed else 'already present or not overwritten' }}."
+
+  handlers:
+    - name: Display kgh symlink info
+      ansible.builtin.debug:
+        msg: "kgh command symlink created/updated: {{ kgh_symlink_dest }} -> {{ kgh_script_abs_path }}"
